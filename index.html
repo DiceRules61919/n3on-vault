@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="robots" content="noindex,nofollow">
+<title>N3on Vault — reaction image library</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="top">
+  <div class="brand"><span class="logo">N3ON</span><span class="vault">VAULT</span></div>
+  <div class="searchwrap">
+    <svg class="sicon" viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.05l4.25 4.24-1.42 1.42-4.24-4.25A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"/></svg>
+    <input id="q" type="search" placeholder="Search a vibe… “caught lacking”, “smug in a hoodie”" autocomplete="off" enterkeyhint="search">
+    <button id="clearq" aria-label="Clear">✕</button>
+  </div>
+  <div class="topbtns">
+    <button id="favbtn" class="pill" aria-pressed="false">♥ <span id="favcount">0</span></button>
+    <button id="filterbtn" class="pill">Filters <span id="fcount"></span></button>
+  </div>
+</header>
+<div id="chips" class="chips"></div>
+<div id="status" class="status"><span id="count"></span><span id="ai" class="ai"></span></div>
+<aside id="panel" class="panel" aria-hidden="true">
+  <div class="panelhead"><b>Filters</b><span><button id="resetf" class="link">Reset</button><button id="closep" class="pill sm">Done</button></span></div>
+  <div id="groups"></div>
+</aside>
+<div id="scrim" class="scrim"></div>
+<main id="grid" class="grid"></main>
+<div id="empty" class="empty" hidden>No matches. Try a different vibe or clear some filters.</div>
+<div id="lb" class="lb" hidden>
+  <button class="lbx" id="lbclose" aria-label="Close">✕</button>
+  <button class="lbnav prev" id="lbprev" aria-label="Previous">‹</button>
+  <button class="lbnav next" id="lbnext" aria-label="Next">›</button>
+  <div class="lbimgwrap"><img id="lbimg" alt=""></div>
+  <div class="lbinfo">
+    <p id="lbdesc"></p>
+    <div id="lbtags" class="lbtags"></div>
+    <div class="lbact">
+      <a id="lbdl" class="act" download>⬇ Download</a>
+      <button id="lbcopy" class="act">📋 Copy</button>
+      <button id="lbfav" class="act">♡ Save</button>
+    </div>
+    <small id="lbmeta"></small>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
