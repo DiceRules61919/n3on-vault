@@ -52,6 +52,7 @@ const VIBES=[
  [/money|rich|bag|paid|expensive/,{clothing:['chain','suit'],prompt:'a rich man flexing money and luxury'}],
  [/love|couple|hug|cuddl/,{who:['woman'],emotion:['smiling'],prompt:'a man hugging a woman affectionately'}],
  [/disgust|gross|ew\b|nasty/,{emotion:['disappointed','confused'],prompt:'a disgusted grossed out man'}],
+ [/\bmog|mogg|looksmax|sigma|\baura\b/,{emotion:['smug','serious'],prompt:'a confident handsome man with a sharp jawline looking dominant and stylish'}],
  [/stare|staring|death stare|mean mug|mugging/,{emotion:['serious'],prompt:'a man staring intensely at the camera'}],
 ];
 const FIELD_OF={};
@@ -88,7 +89,9 @@ function kwScores(q){
   for(const [re,v] of VIBES){if(re.test(lq)){prompt=prompt||v.prompt;
     (v.emotion||[]).forEach((e,j)=>add('emotion',e,2.6-j*.5));(v.who||[]).forEach(e=>add('who',e,1.5));(v.clothing||[]).forEach(e=>add('clothing',e,1))}}
   const plain=words.filter(w=>!SYN[w]);
+  const mogQ=/\bmog|mogg|looksmax|sigma/.test(lq);
   for(const it of state.items){let s=0;
+    if(mogQ&&it.words.has('mog'))s+=4;
     if(want.emotion[it.emotion])s+=want.emotion[it.emotion];else for(const e of it.emo2||[])if(want.emotion[e]){s+=want.emotion[e]*.45;break}
     if(want.setting[it.setting])s+=want.setting[it.setting];
     if(want.who[it.who])s+=want.who[it.who];
