@@ -101,9 +101,9 @@ async function loadPeople(){
 }
 async function load(){
   await loadPeople();
-  const [m,b]=await Promise.all([fetch(BASE+'data.json').then(r=>r.json()),fetch(BASE+'emb.bin').then(r=>r.arrayBuffer())]);
+  const m=await fetch(BASE+'data.json').then(r=>r.json());   // embeddings (emb.bin) load lazily, only when AI search is used
   if(BASE)m.items.forEach(it=>{it.full=BASE+it.full;it.thumb=BASE+it.thumb});
-  META=m;N=m.count;DIM=m.dim;const all=new Int8Array(b);IMG=all.subarray(0,N*DIM);DSC=all.subarray(N*DIM,2*N*DIM);
+  META=m;N=m.count;DIM=m.dim;
   state.items=m.items.map((it,i)=>{it.i=i;const C=m.cats;
     it.emos=it.emos||[it.emotion];it.text=[it.desc,...it.emos.map(e=>C.emotion[e]||e),C.setting[it.setting],C.who[it.who],it.celeb||'',...it.clothing.map(c=>C.clothing[c]),...(it.tags||[]),C.shot[it.shot]].join(' ').toLowerCase();
     it.words=new Set(toks(it.text));return it});
@@ -146,18 +146,29 @@ function kwScores(q){
 // ---------- CLIP (in-browser) ----------
 let clip=null,clipState='idle';
 function setAI(s,msg){clipState=s;const a=$('#ai');a.className='ai '+(s==='ready'?'ok':s==='loading'?'load':'');a.innerHTML='<i></i>'+msg}
+let embP=null;
+function loadEmb(){return embP||(embP=fetch(BASE+'emb.bin').then(r=>r.arrayBuffer()).then(b=>{const all=new Int8Array(b);IMG=all.subarray(0,N*DIM);DSC=all.subarray(N*DIM,2*N*DIM)}))}
+function workerClip(){return new Promise((res,rej)=>{
+  const w=new Worker(new URL('clipworker.js',location.href),{type:'module'});let id=0;const pend=new Map();
+  w.onmessage=e=>{const p=pend.get(e.data.id);if(!p)return;pend.delete(e.data.id);e.data.ok?p.ok(e.data.res):p.err(new Error(e.data.err))};
+  w.onerror=e=>{for(const p of pend.values())p.err(e);pend.clear();rej(e)};
+  const call=(msg)=>new Promise((ok,err)=>{const k=++id;pend.set(k,{ok,err});w.postMessage({...msg,id:k})});
+  call({type:'init',base:new URL('./',location.href).href}).then(()=>res(texts=>call({type:'embed',texts})),rej)})}
+async function mainThreadClip(){
+  const T=await import('./vendor/transformers.min.js');
+  T.env.allowRemoteModels=false;T.env.allowLocalModels=true;T.env.localModelPath=new URL('models/',location.href).href;
+  T.env.backends.onnx.wasm.wasmPaths=new URL('vendor/',location.href).href;T.env.backends.onnx.wasm.numThreads=1;
+  const id='Xenova/clip-vit-base-patch16';
+  const [tok,model]=await Promise.all([T.AutoTokenizer.from_pretrained(id),T.CLIPTextModelWithProjection.from_pretrained(id,{dtype:'q8',device:'wasm'})]);
+  const f=async(texts)=>{const inp=tok(texts,{padding:true,truncation:true});const {text_embeds}=await model(inp);
+    const d=text_embeds.dims[1],data=text_embeds.data,res=[];for(let k=0;k<texts.length;k++){const v=data.slice(k*d,(k+1)*d);let n=0;for(const x of v)n+=x*x;n=Math.sqrt(n);res.push(v.map(x=>x/n))}return res};
+  await f(['warmup']);return f}
 async function initClip(){
   if(clip||clipState==='loading'||clipState==='failed')return;
   setAI('loading','loading AI search…');
   try{
-    const T=await import('./vendor/transformers.min.js');
-    T.env.allowRemoteModels=false;T.env.allowLocalModels=true;T.env.localModelPath=new URL('models/',location.href).href;
-    T.env.backends.onnx.wasm.wasmPaths=new URL('vendor/',location.href).href;T.env.backends.onnx.wasm.numThreads=1;
-    const id='Xenova/clip-vit-base-patch16';
-    const [tok,model]=await Promise.all([T.AutoTokenizer.from_pretrained(id),T.CLIPTextModelWithProjection.from_pretrained(id,{dtype:'q8',device:'wasm'})]);
-    clip=async(texts)=>{const inp=tok(texts,{padding:true,truncation:true});const {text_embeds}=await model(inp);
-      const d=text_embeds.dims[1],data=text_embeds.data,res=[];for(let k=0;k<texts.length;k++){const v=data.slice(k*d,(k+1)*d);let n=0;for(const x of v)n+=x*x;n=Math.sqrt(n);res.push(v.map(x=>x/n))}return res};
-    await clip(['warmup']);setAI('ready','AI vibe search on');if(state.q)update();
+    let f;try{f=await workerClip()}catch(e){console.warn('worker CLIP unavailable, main thread',e);f=await mainThreadClip()}
+    await loadEmb();clip=f;setAI('ready','AI vibe search on');if(state.q)update();
   }catch(e){console.warn('CLIP failed',e);setAI('failed','keyword search');}
 }
 const cache=new Map();
@@ -190,32 +201,42 @@ async function update(){
 }
 
 // ---------- grid ----------
-const grid=$('#grid');let cols=2,colW=0;const GAP=8;const nodes=new Map();
+const grid=$('#grid');let cols=2,colW=0;const GAP=8;const nodes=new Map();let POS=[],gridTop=0;
+// Virtualized masonry: positions are computed for every result (cheap math), but only cards near the viewport are in the DOM.
 function layout(){
   const W=grid.clientWidth;cols=Math.max(2,Math.min(7,Math.floor(W/210)));colW=(W-GAP*(cols-1))/cols;
-  const h=new Array(cols).fill(0);
-  state.order.forEach(it=>{const n=nodes.get(it.id);let c=0;for(let k=1;k<cols;k++)if(h[k]<h[c]-1)c=k;
-    const hh=colW*it.th/it.tw;n.style.width=colW+'px';n.style.height=hh+'px';n.style.left=(c*(colW+GAP))+'px';n.style.top=h[c]+'px';h[c]+=hh+GAP});
-  grid.style.height=Math.max(0,...h)+'px'}
-function card(it){
-  const d=document.createElement('div');d.className='card';d.tabIndex=0;
-  d.innerHTML=`<img loading="lazy" decoding="async" alt="">${''}<div class="ov"><span class="tg"></span><span class="qa"><button class="cp" title="Copy">📋</button><button class="dl" title="Download">⬇</button><button class="bh" title="Bottom-half 1080×960 (face-centered)">▤</button><button class="fav" title="Save">♥</button></span></div>`;
-  const img=d.querySelector('img');img.onload=()=>img.classList.add('ld');img.src=it.thumb;img.alt=it.desc;
-  d.querySelector('.tg').textContent=it.emos.slice(0,2).map(e=>META.cats.emotion[e]).join(' · ');
-  d.addEventListener('click',e=>{const b=e.target.closest('button');
-    if(b?.classList.contains('fav')){e.stopPropagation();toggleFav(it);return}
-    if(b?.classList.contains('dl')){e.stopPropagation();download(it);return}
-    if(b?.classList.contains('bh')){e.stopPropagation();bottomHalf(it);return}
-    if(b?.classList.contains('cp')){e.stopPropagation();copyImg(it);return}
-    openLB(state.order.indexOf(it))});
-  d.addEventListener('keydown',e=>{if(e.key==='Enter')openLB(state.order.indexOf(it))});
+  const h=new Array(cols).fill(0);POS=new Array(state.order.length);
+  state.order.forEach((it,r)=>{let c=0;for(let k=1;k<cols;k++)if(h[k]<h[c]-1)c=k;
+    const hh=colW*it.th/it.tw;POS[r]=[c*(colW+GAP),h[c],colW,hh];h[c]+=hh+GAP});
+  grid.style.height=Math.max(0,...h)+'px';gridTop=grid.getBoundingClientRect().top+scrollY;mount(true)}
+function mount(force){
+  const y0=scrollY-gridTop-innerHeight*1.2,y1=scrollY-gridTop+innerHeight*2.2,q=!!state.q.trim();const want=new Set();
+  for(let r=0;r<state.order.length;r++){const p=POS[r];if(!p||p[1]+p[3]<y0||p[1]>y1)continue;const it=state.order[r];want.add(it.id);
+    let n=nodes.get(it.id);const fresh=!n;if(fresh){n=card(it);nodes.set(it.id,n)}
+    if(fresh||force||n._r!==r){n._r=r;const st=n.style;st.width=p[2]+'px';st.height=p[3]+'px';st.transform=`translate3d(${p[0]}px,${p[1]}px,0)`;
+      n.classList.toggle('best',q&&r<3);n._fav.classList.toggle('on',favs.has(it.id))}
+    if(fresh)grid.appendChild(n)}
+  for(const [id,n] of nodes)if(!want.has(id)){n.remove();nodes.delete(id);if(POOL.length<80)POOL.push(n)}}
+let mq=0;addEventListener('scroll',()=>{if(!mq)mq=requestAnimationFrame(()=>{mq=0;mount(false)})},{passive:true});
+const byId=new Map();
+const TPL=document.createElement('div');TPL.className='card';TPL.tabIndex=0;
+TPL.innerHTML=`<img decoding="async" alt=""><div class="ov"><span class="tg"></span><span class="qa"><button class="cp" title="Copy">📋</button><button class="dl" title="Download">⬇</button><button class="bh" title="Bottom-half 1080×960 (face-centered)">▤</button><button class="fav" title="Save">♥</button></span></div>`;
+const POOL=[];
+function onImg(e){const im=e.target,it=byId.get(im.parentNode&&im.parentNode.dataset.id);if(it&&im.getAttribute('src')===it.thumb){it._ld=1;im.classList.add('ld')}}
+function card(it){   // recycled node from POOL when possible (no DOM parsing while scrolling)
+  let d=POOL.pop();if(!d){d=TPL.cloneNode(true);d._img=d.firstChild;d._tg=d.querySelector('.tg');d._fav=d.querySelector('.fav');d._img.addEventListener('load',onImg)}
+  d.dataset.id=it.id;d._r=-1;const img=d._img;img.classList.toggle('ld',!!it._ld);img.src=it.thumb;img.alt=it.desc;
+  d._tg.textContent=it._tg||(it._tg=it.emos.slice(0,2).map(e=>META.cats.emotion[e]).join(' · '));
   return d}
+grid.addEventListener('click',e=>{const d=e.target.closest('.card');if(!d)return;const it=byId.get(d.dataset.id);if(!it)return;const b=e.target.closest('button');
+  if(b?.classList.contains('fav')){e.stopPropagation();toggleFav(it);return}
+  if(b?.classList.contains('dl')){e.stopPropagation();download(it);return}
+  if(b?.classList.contains('bh')){e.stopPropagation();bottomHalf(it);return}
+  if(b?.classList.contains('cp')){e.stopPropagation();copyImg(it);return}
+  openLB(state.order.indexOf(it))});
+grid.addEventListener('keydown',e=>{if(e.key!=='Enter')return;const d=e.target.closest('.card');const it=d&&byId.get(d.dataset.id);if(it)openLB(state.order.indexOf(it))});
 function render(){
-  const keep=new Set(state.order.map(i=>i.id));
-  for(const [id,n] of nodes)if(!keep.has(id)){n.remove();nodes.delete(id)}
-  state.order.forEach((it,r)=>{let n=nodes.get(it.id);if(!n){n=card(it);nodes.set(it.id,n);grid.appendChild(n)}
-    n.classList.toggle('best',!!state.q.trim()&&r<3);
-    n.querySelector('.fav').classList.toggle('on',favs.has(it.id))});
+  if(!byId.size)state.items.forEach(it=>byId.set(it.id,it));
   layout();
   $('#empty').hidden=state.order.length>0;
   const tot=state.items.length;$('#count').textContent=(state.q||activeCount()||state.favOnly)?`${state.order.length} of ${tot} images`+(state.q?' · best matches first':''):`${tot} images`;
@@ -253,7 +274,6 @@ $('#favbtn').onclick=()=>{state.favOnly=!state.favOnly;$('#favbtn').setAttribute
 // ---------- search box ----------
 const qi=$('#q');let deb;
 qi.addEventListener('input',()=>{state.q=qi.value;$('#clearq').style.display=qi.value?'block':'none';initClip();clearTimeout(deb);deb=setTimeout(update,220)});
-qi.addEventListener('focus',initClip);
 qi.addEventListener('keydown',e=>{if(e.key==='Enter'){qi.blur();clearTimeout(deb);update()}});
 $('#clearq').onclick=()=>{qi.value='';state.q='';$('#clearq').style.display='none';update()};
 
@@ -291,7 +311,7 @@ let tx=null;lb.addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passi
 lb.addEventListener('touchend',e=>{if(tx==null)return;const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>60)(dx<0?$('#lbnext'):$('#lbprev')).click();tx=null});
 
 saveFavs();setAI('idle','tap search for AI vibe search');
-load().then(()=>{('requestIdleCallback' in window?requestIdleCallback:setTimeout)(()=>initClip(),{timeout:2500})}).catch(e=>{console.error(e);$('#count').textContent='Failed to load library'});
+load().then(()=>{if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{})}).catch(e=>{console.error(e);$('#count').textContent='Failed to load library'});
 
 // ---------- bottom-half ready download: 1080x960 (bottom of a 1080x1920 split), face-centered chest-up, light sharpen, all client-side ----------
 function loadImg(src){return new Promise((res,rej)=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=rej;im.src=src})}
