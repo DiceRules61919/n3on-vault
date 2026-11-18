@@ -2,8 +2,14 @@
 const $=s=>document.querySelector(s);
 const state={items:[],q:'',f:{emotion:new Set(),setting:new Set(),who:new Set(),clothing:new Set(),shot:new Set()},favOnly:false,order:[],scores:null,lbIndex:-1};
 let META,IMG,DSC,DIM=512,N=0;
-const favs=new Set(JSON.parse(localStorage.getItem('n3on_favs')||'[]'));
-const saveFavs=()=>{localStorage.setItem('n3on_favs',JSON.stringify([...favs]));$('#favcount').textContent=favs.size};
+// ---------- streamer switcher: ?s=<slug>; n3on lives at the root, others under p/<slug>/ ----------
+const PEOPLE_FALLBACK=[{slug:'n3on',name:'N3on'}];
+const SLUG=(new URLSearchParams(location.search).get('s')||'n3on').toLowerCase().replace(/[^a-z0-9_-]/g,'');
+const BASE=SLUG==='n3on'?'':`p/${SLUG}/`;
+let PERSON={slug:SLUG,name:SLUG==='n3on'?'N3on':SLUG,first:SLUG};
+const FKEY=SLUG==='n3on'?'n3on_favs':SLUG+'_favs';
+const favs=new Set(JSON.parse(localStorage.getItem(FKEY)||'[]'));
+const saveFavs=()=>{localStorage.setItem(FKEY,JSON.stringify([...favs]));$('#favcount').textContent=favs.size};
 const toast=(m)=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),1800)};
 
 // ---------- vocabulary: synonyms + vibes ----------
@@ -83,8 +89,20 @@ const FIELD_OF={};
 const toks=s=>s.toLowerCase().replace(/[’']/g,"'").split(/[^a-z0-9'+-]+/).filter(Boolean);
 
 // ---------- data ----------
+async function loadPeople(){
+  let P=PEOPLE_FALLBACK;try{P=await fetch('people.json',{cache:'no-cache'}).then(r=>r.json())}catch(e){}
+  const me=P.find(p=>p.slug===SLUG);if(me)PERSON=me;
+  const nm=PERSON.name;document.title=`${nm} Vault — reaction image library`;
+  $('#logo').textContent=nm.toUpperCase();
+  $('#q').placeholder=`Search a vibe… “caught lacking”, “smug in a hoodie”`;
+  const menu=$('#pmenu');menu.innerHTML='';
+  for(const p of P){const a=document.createElement('a');a.href=p.slug==='n3on'?'./':`./?s=${p.slug}`;a.className='pitem'+(p.slug===SLUG?' on':'');
+    a.innerHTML=`<b>${p.name}</b><small>${p.count?p.count+' images':''}</small>`;menu.appendChild(a)}
+}
 async function load(){
-  const [m,b]=await Promise.all([fetch('data.json').then(r=>r.json()),fetch('emb.bin').then(r=>r.arrayBuffer())]);
+  await loadPeople();
+  const [m,b]=await Promise.all([fetch(BASE+'data.json').then(r=>r.json()),fetch(BASE+'emb.bin').then(r=>r.arrayBuffer())]);
+  if(BASE)m.items.forEach(it=>{it.full=BASE+it.full;it.thumb=BASE+it.thumb});
   META=m;N=m.count;DIM=m.dim;const all=new Int8Array(b);IMG=all.subarray(0,N*DIM);DSC=all.subarray(N*DIM,2*N*DIM);
   state.items=m.items.map((it,i)=>{it.i=i;const C=m.cats;
     it.emos=it.emos||[it.emotion];it.text=[it.desc,...it.emos.map(e=>C.emotion[e]||e),C.setting[it.setting],C.who[it.who],it.celeb||'',...it.clothing.map(c=>C.clothing[c]),...(it.tags||[]),C.shot[it.shot]].join(' ').toLowerCase();
@@ -103,7 +121,7 @@ function inFilters(it){const f=state.f;
 // ---------- keyword scoring ----------
 function kwScores(q){
   const out=new Float32Array(N);if(!q)return out;
-  const words=toks(q).filter(w=>!['n3on','neon','a','the','in','with','of','and','is','he','his','on','at','looking','face','photo','pic','image','being'].includes(w));
+  const words=toks(q).filter(w=>!['n3on','neon',...toks(PERSON.name),'a','the','in','with','of','and','is','he','his','on','at','looking','face','photo','pic','image','being'].includes(w));
   const want={emotion:{},setting:{},who:{},clothing:{},shot:{}};
   const add=(g,k,w)=>{want[g][k]=Math.max(want[g][k]||0,w)};
   const C=META.cats;
@@ -145,7 +163,7 @@ async function initClip(){
 const cache=new Map();
 async function clipScores(q,prompt){
   const key=q+'|'+prompt;if(cache.has(key))return cache.get(key);
-  const texts=['a photo of N3on '+q,q];if(prompt)texts.push(prompt);
+  const texts=[`a photo of ${PERSON.name} `+q,q];if(prompt)texts.push(prompt);
   const E=await clip(texts);const qv=new Float32Array(DIM);E.forEach((e,j)=>{const w=j===2?0.8:1;for(let d=0;d<DIM;d++)qv[d]+=e[d]*w});
   let n=0;for(const x of qv)n+=x*x;n=Math.sqrt(n);for(let d=0;d<DIM;d++)qv[d]/=n;
   const qd=E[1];const si=new Float32Array(N),sd=new Float32Array(N);
@@ -181,12 +199,13 @@ function layout(){
   grid.style.height=Math.max(0,...h)+'px'}
 function card(it){
   const d=document.createElement('div');d.className='card';d.tabIndex=0;
-  d.innerHTML=`<img loading="lazy" decoding="async" alt="">${''}<div class="ov"><span class="tg"></span><span class="qa"><button class="cp" title="Copy">📋</button><button class="dl" title="Download">⬇</button><button class="fav" title="Save">♥</button></span></div>`;
+  d.innerHTML=`<img loading="lazy" decoding="async" alt="">${''}<div class="ov"><span class="tg"></span><span class="qa"><button class="cp" title="Copy">📋</button><button class="dl" title="Download">⬇</button><button class="bh" title="Bottom-half 1080×960 (face-centered)">▤</button><button class="fav" title="Save">♥</button></span></div>`;
   const img=d.querySelector('img');img.onload=()=>img.classList.add('ld');img.src=it.thumb;img.alt=it.desc;
   d.querySelector('.tg').textContent=it.emos.slice(0,2).map(e=>META.cats.emotion[e]).join(' · ');
   d.addEventListener('click',e=>{const b=e.target.closest('button');
     if(b?.classList.contains('fav')){e.stopPropagation();toggleFav(it);return}
     if(b?.classList.contains('dl')){e.stopPropagation();download(it);return}
+    if(b?.classList.contains('bh')){e.stopPropagation();bottomHalf(it);return}
     if(b?.classList.contains('cp')){e.stopPropagation();copyImg(it);return}
     openLB(state.order.indexOf(it))});
   d.addEventListener('keydown',e=>{if(e.key==='Enter')openLB(state.order.indexOf(it))});
@@ -194,7 +213,8 @@ function card(it){
 function render(){
   const keep=new Set(state.order.map(i=>i.id));
   for(const [id,n] of nodes)if(!keep.has(id)){n.remove();nodes.delete(id)}
-  state.order.forEach(it=>{let n=nodes.get(it.id);if(!n){n=card(it);nodes.set(it.id,n);grid.appendChild(n)}
+  state.order.forEach((it,r)=>{let n=nodes.get(it.id);if(!n){n=card(it);nodes.set(it.id,n);grid.appendChild(n)}
+    n.classList.toggle('best',!!state.q.trim()&&r<3);
     n.querySelector('.fav').classList.toggle('on',favs.has(it.id))});
   layout();
   $('#empty').hidden=state.order.length>0;
@@ -264,7 +284,7 @@ function lbFavUI(){const it=state.order[state.lbIndex];if(!it)return;const on=fa
 function closeLB(){lb.hidden=true;state.lbIndex=-1;document.body.style.overflow='';lbimg.removeAttribute('src')}
 $('#lbclose').onclick=closeLB;$('#lbprev').onclick=()=>openLB(Math.max(0,state.lbIndex-1));$('#lbnext').onclick=()=>openLB(Math.min(state.order.length-1,state.lbIndex+1));
 $('#lbdl').onclick=e=>{e.preventDefault();download(state.order[state.lbIndex])};
-$('#lbcopy').onclick=()=>copyImg(state.order[state.lbIndex]);$('#lbfav').onclick=()=>toggleFav(state.order[state.lbIndex]);
+$('#lbcopy').onclick=()=>copyImg(state.order[state.lbIndex]);$('#lbbh').onclick=()=>bottomHalf(state.order[state.lbIndex]);$('#lbfav').onclick=()=>toggleFav(state.order[state.lbIndex]);
 lb.addEventListener('click',e=>{if(e.target===lb||e.target.classList.contains('lbimgwrap'))closeLB()});
 addEventListener('keydown',e=>{if(lb.hidden)return;if(e.key==='Escape')closeLB();if(e.key==='ArrowRight')$('#lbnext').click();if(e.key==='ArrowLeft')$('#lbprev').click()});
 let tx=null;lb.addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
@@ -272,3 +292,41 @@ lb.addEventListener('touchend',e=>{if(tx==null)return;const dx=e.changedTouches[
 
 saveFavs();setAI('idle','tap search for AI vibe search');
 load().then(()=>{('requestIdleCallback' in window?requestIdleCallback:setTimeout)(()=>initClip(),{timeout:2500})}).catch(e=>{console.error(e);$('#count').textContent='Failed to load library'});
+
+// ---------- bottom-half ready download: 1080x960 (bottom of a 1080x1920 split), face-centered chest-up, light sharpen, all client-side ----------
+function loadImg(src){return new Promise((res,rej)=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=rej;im.src=src})}
+function bhRect(it,W,H){
+  const AR=1080/960;let f=it.face;// normalized [x,y,w,h]
+  if(!f)f=[0.38,0.15,0.24,0.24];
+  const fx=f[0]*W,fy=f[1]*H,fw=f[2]*W,fh=f[3]*H;
+  let h=Math.max(fh*3.3,H*0.55,960*0.62);let w=h*AR;
+  if(w>W){w=W;h=w/AR}if(h>H){h=H;w=h*AR;if(w>W){w=W;h=w/AR}}
+  let x=fx+fw/2-w/2,y=fy-h*0.16;
+  x=Math.max(0,Math.min(W-w,x));y=Math.max(0,Math.min(H-h,y));
+  return [x,y,w,h]}
+function sharpen(ctx,W,H,amt){const d=ctx.getImageData(0,0,W,H),s=d.data,o=new Uint8ClampedArray(s);
+  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){const i=(y*W+x)*4;
+    for(let c=0;c<3;c++){const v=s[i+c],b=(s[i-4+c]+s[i+4+c]+s[i-W*4+c]+s[i+W*4+c])/4;o[i+c]=v+(v-b)*amt}}
+  d.data.set(o);ctx.putImageData(d,0,0)}
+async function bottomHalf(it){
+  try{toast('Making bottom-half 1080×960…');const im=await loadImg(it.full);const W=im.naturalWidth,H=im.naturalHeight;
+    const [x,y,w,h]=bhRect(it,W,H);const c=document.createElement('canvas');c.width=1080;c.height=960;const ctx=c.getContext('2d');
+    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(im,x,y,w,h,0,0,1080,960);
+    sharpen(ctx,1080,960,w<1080?0.55:0.3);
+    const b=await new Promise(r=>c.toBlob(r,'image/jpeg',0.95));const u=URL.createObjectURL(b);const a=document.createElement('a');
+    a.href=u;a.download=fname(it).replace(/\.jpg$/i,'')+'-bottom-1080x960.jpg';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Bottom-half ready ✓')}
+  catch(e){console.warn(e);toast('Could not make bottom-half here')}}
+
+// ---------- caption → image match ----------
+const cap=$('#cap'),capT=$('#capt');
+$('#capbtn').onclick=()=>{cap.hidden=false;setTimeout(()=>capT.focus(),50);initClip()};
+$('#capclose').onclick=()=>{cap.hidden=true};
+cap.addEventListener('click',e=>{if(e.target===cap)cap.hidden=true});
+$('#capgo').onclick=async()=>{const t=capT.value.trim();if(!t){toast('Paste a caption or clip quote first');return}
+  cap.hidden=true;state.capMode=true;qi.value=t;state.q=t;$('#clearq').style.display='block';
+  if(!clip&&clipState==='loading')toast('AI loading — ranking with keywords for now');
+  await update();scrollTo({top:0,behavior:'smooth'});toast(`Best ${PERSON.name} images for that caption`)};
+capT.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))$('#capgo').click()});
+// switcher menu
+$('#brand').onclick=e=>{e.stopPropagation();$('#pmenu').classList.toggle('open')};
+addEventListener('click',()=>$('#pmenu').classList.remove('open'));

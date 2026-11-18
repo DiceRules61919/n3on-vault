@@ -11,13 +11,14 @@
 </head>
 <body>
 <header id="top">
-  <div class="brand"><span class="logo">N3ON</span><span class="vault">VAULT</span></div>
+  <div class="bwrap"><button id="brand" class="brand" aria-haspopup="true" title="Switch streamer"><span class="logo" id="logo">N3ON</span><span class="vault">VAULT</span><span class="caret">▾</span></button><nav id="pmenu" class="pmenu"></nav></div>
   <div class="searchwrap">
     <svg class="sicon" viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.05l4.25 4.24-1.42 1.42-4.24-4.25A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"/></svg>
     <input id="q" type="search" placeholder="Search a vibe… “caught lacking”, “smug in a hoodie”" autocomplete="off" enterkeyhint="search">
     <button id="clearq" aria-label="Clear">✕</button>
   </div>
   <div class="topbtns">
+    <button id="capbtn" class="pill" title="Paste a caption, get the best bottom images">🎬 Caption</button>
     <button id="favbtn" class="pill" aria-pressed="false">♥ <span id="favcount">0</span></button>
     <button id="filterbtn" class="pill">Filters <span id="fcount"></span></button>
   </div>
@@ -41,12 +42,18 @@
     <div id="lbtags" class="lbtags"></div>
     <div class="lbact">
       <a id="lbdl" class="act" download>⬇ Download</a>
+      <button id="lbbh" class="act" title="1080×960 face-centered bottom half">▤ Bottom half</button>
       <button id="lbcopy" class="act">📋 Copy</button>
       <button id="lbfav" class="act">♡ Save</button>
     </div>
     <small id="lbmeta"></small>
   </div>
 </div>
+<div id="cap" class="capm" hidden><div class="capbox">
+  <div class="panelhead"><b>🎬 Caption → image match</b><button id="capclose" class="pill sm">✕</button></div>
+  <p class="capsub">Paste your caption or the clip quote. The best bottom images for it get ranked first (top 3 highlighted).</p>
+  <textarea id="capt" rows="4" placeholder="e.g. “when she says she's 5 minutes away but you see her still in bed”"></textarea>
+  <button id="capgo" class="act capgo">Find best images</button></div></div>
 <div id="toast" class="toast"></div>
 <script type="module" src="app.js"></script>
 </body>

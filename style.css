@@ -75,3 +75,23 @@ header{position:sticky;top:0;z-index:20;display:flex;gap:12px;align-items:center
 @media(hover:none){.lbnav{display:none}}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,40px);opacity:0;background:#fff;color:#000;font-weight:700;padding:10px 18px;border-radius:999px;z-index:60;transition:all .25s;pointer-events:none}
 .toast.on{transform:translate(-50%,0);opacity:1}
+
+.bwrap{position:relative}
+.brand{background:none;border:0;color:inherit;padding:4px 2px;cursor:pointer;display:flex;align-items:baseline;font:inherit;font-weight:900;letter-spacing:.06em;font-size:20px}
+.caret{margin-left:6px;font-size:12px;color:var(--mut)}
+.pmenu{position:absolute;top:44px;left:0;z-index:40;min-width:230px;background:#111;border:1px solid #2a2a2a;border-radius:14px;padding:6px;display:none;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+.pmenu.open{display:block}
+.pitem{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;color:#fff;text-decoration:none}
+.pitem:hover{background:#1c1c1c}.pitem.on{background:#1c1c1c;box-shadow:inset 3px 0 0 var(--pink)}
+.pitem small{color:var(--mut)}
+.card .qa .bh{font-size:15px}
+.card.best{outline:3px solid var(--cyan);outline-offset:-3px}
+.card.best::after{content:'TOP MATCH';position:absolute;top:8px;left:8px;background:var(--cyan);color:#000;font-weight:900;font-size:10px;padding:3px 7px;border-radius:999px;letter-spacing:.06em}
+.lbact{grid-template-columns:repeat(4,1fr)}
+.capm{position:fixed;inset:0;z-index:55;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px}
+.capm[hidden]{display:none}
+.capbox{width:100%;max-width:560px;background:#111;border:1px solid #2a2a2a;border-radius:16px;padding:14px}
+.capsub{color:var(--mut);font-size:13px;margin:6px 0 10px}
+.capbox textarea{width:100%;box-sizing:border-box;background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:12px;padding:12px;font:inherit;font-size:15px;resize:vertical}
+.capgo{width:100%;margin-top:10px;background:var(--pink);border-color:var(--pink);cursor:pointer}
+@media(max-width:600px){.lbact{grid-template-columns:repeat(2,1fr)}#capbtn{padding:0 10px}}
