@@ -242,7 +242,7 @@ function renderChips(){
   const c=$('#chips');c.innerHTML='';
   for(const [g,s] of Object.entries(state.f))for(const k of s)if(!(g==='emotion'&&QUICK.includes(k))){const b=document.createElement('button');b.className='chip x';b.textContent=META.cats[g][k]+'  ✕';b.onclick=()=>toggleF(g,k);c.appendChild(b)}
   for(const k of QUICK){if(!META.cats.emotion[k])continue;const b=document.createElement('button');b.className='chip'+(state.f.emotion.has(k)?' on':'');b.textContent=META.cats.emotion[k];b.onclick=()=>toggleF('emotion',k);c.appendChild(b)}
-  for(const k of ['stream','car','gym','event','street']){const b=document.createElement('button');b.className='chip'+(state.f.setting.has(k)?' on':'');b.textContent=META.cats.setting[k];b.onclick=()=>toggleF('setting',k);c.appendChild(b)}
+  const sc=counts('setting');for(const k of Object.keys(sc).filter(k=>META.cats.setting[k]&&sc[k]>=3).sort((a,b)=>sc[b]-sc[a]).slice(0,8)){const b=document.createElement('button');b.className='chip'+(state.f.setting.has(k)?' on':'');b.textContent=META.cats.setting[k];b.onclick=()=>toggleF('setting',k);c.appendChild(b)}
 }
 const panel=$('#panel'),scrim=$('#scrim');
 const openP=o=>{panel.classList.toggle('open',o);scrim.classList.toggle('on',o);panel.setAttribute('aria-hidden',!o)};
