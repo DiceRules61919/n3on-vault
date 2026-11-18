@@ -8,16 +8,31 @@ const toast=(m)=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clea
 
 // ---------- vocabulary: synonyms + vibes ----------
 const SYN={smile:'smiling',smiles:'smiling',smiling:'smiling',happy:'smiling',grin:'smiling',grinning:'smiling',cheesing:'smiling',cheese:'smiling',joy:'smiling',
- laugh:'laughing',laughing:'laughing',lol:'laughing',lmao:'laughing',dying:'laughing',crying:'laughing',funny:'laughing',
+ laugh:'laughing',laughing:'laughing',lol:'laughing',lmao:'laughing',funny:'laughing',
+ hysterical:'hysterical',hysterically:'hysterical',dying:'hysterical',crying:'hysterical',lmfao:'hysterical',rofl:'hysterical',wheezing:'hysterical',wheeze:'hysterical',dead:'hysterical',weak:'hysterical',
  smug:'smug',smirk:'smug',smirking:'smug',cocky:'smug',confident:'smug',aura:'smug',mog:'smug',mogging:'smug',
- shocked:'shocked',shock:'shocked',surprised:'shocked',surprise:'shocked',wow:'shocked',omg:'shocked',stunned:'shocked',scared:'shocked',jawdrop:'shocked',
- sad:'sad',crying_:'sad',upset:'sad',depressed:'sad',down:'sad',hurt:'sad',
- angry:'angry',mad:'angry',pissed:'angry',furious:'angry',rage:'angry',
+ shocked:'shocked',shock:'shocked',surprised:'shocked',surprise:'shocked',wow:'shocked',omg:'shocked',stunned:'shocked',jawdrop:'shocked',gasp:'shocked',speechless:'shocked',
+ disbelief:'disbelief',unbelievable:'disbelief',nah:'disbelief',bruh:'disbelief',deadass:'disbelief',really:'disbelief',
+ scared:'scared',scary:'scared',afraid:'scared',fear:'scared',terrified:'scared',spooked:'scared',frightened:'scared',
+ confused:'confused',confusion:'confused',huh:'confused',what:'confused',puzzled:'confused',lost:'confused',wtf:'confused',
+ suspicious:'suspicious',sus:'suspicious',sideeye:'suspicious',skeptical:'suspicious',doubt:'suspicious',judging:'suspicious',squint:'suspicious',
+ disgusted:'disgusted',disgust:'disgusted',gross:'disgusted',ew:'disgusted',eww:'disgusted',nasty:'disgusted',yuck:'disgusted',
+ cringe:'cringe',cringing:'cringe',cringy:'cringe',grimace:'cringe',yikes:'cringe',oof:'cringe',
+ awkward:'awkward',uncomfortable:'awkward',weird:'awkward',
+ nervous:'nervous',anxious:'nervous',worried:'nervous',stressed:'nervous',sweating:'nervous',sweaty:'nervous',
+ embarrassed:'embarrassed',shy:'embarrassed',blushing:'embarrassed',ashamed:'embarrassed',facepalm:'embarrassed',
+ annoyed:'annoyed',irritated:'annoyed',fedup:'annoyed',eyeroll:'annoyed',bothered:'annoyed',
+ sad:'sad',upset:'sad',depressed:'sad',down:'sad',hurt:'sad',heartbroken:'sad',
+ angry:'angry',mad:'angry',pissed:'angry',furious:'angry',rage:'angry',raging:'angry',
  calm:'calm',neutral:'calm',chill:'calm',relaxed:'calm',straight:'calm',blank:'calm',
  hype:'hype',hyped:'hype',excited:'hype',yelling:'hype',screaming:'hype',lit:'hype',turnt:'hype',energy:'hype',
- confused:'confused',confusion:'confused',huh:'confused',what:'confused',puzzled:'confused',thinking:'confused',
  disappointed:'disappointed',disappointment:'disappointed',letdown:'disappointed',unimpressed:'disappointed',done:'disappointed',
- serious:'serious',stare:'serious',staring:'serious',focused:'serious',mean:'serious',
+ serious:'serious',stare:'serious',staring:'serious',mean:'serious',
+ focused:'focused',focus:'focused',concentrating:'focused',lockedin:'focused',
+ thinking:'thinking',thoughtful:'thinking',pondering:'thinking',hmm:'thinking',hmmm:'thinking',
+ flirty:'flirty',flirt:'flirty',flirting:'flirty',rizz:'flirty',charming:'flirty',
+ proud:'proud',pride:'proud',
+ tired:'tired',sleepy:'tired',exhausted:'tired',bored:'tired',
  stream:'stream',streaming:'stream',desk:'stream',kick:'stream',setup:'stream',
  street:'street',city:'street',irl:'street',walking:'street',sidewalk:'street',
  car:'car',driving:'car',ride:'car',uber:'car',whip:'car',
@@ -37,23 +52,32 @@ const SYN={smile:'smiling',smiles:'smiling',smiling:'smiling',happy:'smiling',gr
  girl:'woman',woman:'woman',girlfriend:'woman',gf:'woman',date:'woman',lady:'woman',guy:'guy',man:'guy',dude:'guy',bro:'guy',friends:'group',group:'group',squad:'group',crew:'group',
  solo:'solo',alone:'solo',selfie:'close',closeup:'close',close:'close',face:'close'};
 const VIBES=[
- [/caught lacking|lacking|caught off guard|off guard|candid/,{emotion:['shocked','confused','calm'],prompt:'a candid photo of a man caught off guard, surprised and unaware'}],
- [/took an? l\b|\bl\b|\bloss\b|lost|fumble|fumbled|it'?s over|cooked/,{emotion:['disappointed','sad','shocked'],prompt:'a photo of a disappointed defeated man'}],
+ [/caught lacking|lacking|caught off guard|off guard|candid/,{emotion:['shocked','confused','awkward'],prompt:'a candid photo of a man caught off guard, surprised and unaware'}],
+ [/took an? l\b|\bl\b|\bloss\b|fumble|fumbled|it'?s over|cooked/,{emotion:['disappointed','sad','shocked'],prompt:'a photo of a disappointed defeated man'}],
  [/\bw\b|\bdub\b|winning|won|let'?s go|lets go|celebrat/,{emotion:['hype','smiling','laughing'],prompt:'a photo of a man celebrating, hyped and happy'}],
  [/crash(ing)? out|crashout|tweak|tweaking|lost it/,{emotion:['angry','hype','shocked'],prompt:'a photo of a man yelling and losing control'}],
- [/rizz|flirt|pull(ing)?\b/,{emotion:['smug','smiling'],who:['woman'],prompt:'a man smiling flirtatiously with a woman'}],
- [/locked in|focus|grind/,{emotion:['serious','calm'],prompt:'a focused serious man concentrating'}],
- [/side ?eye|suspicious|\bsus\b|judging/,{emotion:['smug','confused','serious'],prompt:'a man giving a suspicious side eye look'}],
+ [/rizz|flirt|pull(ing)?\b/,{emotion:['flirty','smug','smiling'],who:['woman'],prompt:'a man smiling flirtatiously with a woman'}],
+ [/locked in|focus|grind/,{emotion:['focused','serious'],prompt:'a focused serious man concentrating'}],
+ [/side ?eye|suspicious|\bsus\b|judging|skeptic/,{emotion:['suspicious','annoyed','smug'],prompt:'a man giving a suspicious side eye look'}],
  [/drip|flex|fit check|outfit|fashion|designer/,{clothing:['suit','jacket','chain','sunglasses'],prompt:'a man showing off a stylish expensive outfit'}],
- [/goofy|silly|clown|derp/,{emotion:['laughing','hype','shocked'],prompt:'a man making a goofy silly face'}],
- [/awkward|cringe|uncomfortable/,{emotion:['confused','calm','disappointed'],prompt:'an awkward uncomfortable man'}],
- [/proud|wholesome|cute/,{emotion:['smiling','calm'],prompt:'a wholesome sweet smiling man'}],
- [/tired|sleepy|exhausted|bored/,{emotion:['calm','disappointed'],prompt:'a tired bored man'}],
+ [/goofy|silly|clown|derp/,{emotion:['hysterical','laughing','hype'],prompt:'a man making a goofy silly face'}],
+ [/awkward|uncomfortable/,{emotion:['awkward','cringe','nervous'],prompt:'an awkward uncomfortable man'}],
+ [/cringe|yikes|secondhand/,{emotion:['cringe','awkward','disgusted'],prompt:'a man cringing and grimacing'}],
+ [/proud|wholesome|cute/,{emotion:['proud','smiling'],prompt:'a wholesome proud smiling man'}],
+ [/tired|sleepy|exhausted|bored/,{emotion:['tired','calm'],prompt:'a tired bored man'}],
  [/money|rich|bag|paid|expensive/,{clothing:['chain','suit'],prompt:'a rich man flexing money and luxury'}],
- [/love|couple|hug|cuddl/,{who:['woman'],emotion:['smiling'],prompt:'a man hugging a woman affectionately'}],
- [/disgust|gross|ew\b|nasty/,{emotion:['disappointed','confused'],prompt:'a disgusted grossed out man'}],
+ [/love|couple|hug|cuddl/,{who:['woman'],emotion:['smiling','flirty'],prompt:'a man hugging a woman affectionately'}],
+ [/disgust|gross|\bew+\b|nasty|yuck/,{emotion:['disgusted','cringe'],prompt:'a disgusted grossed out man'}],
  [/\bmog|mogg|looksmax|sigma|\baura\b/,{emotion:['smug','serious'],prompt:'a confident handsome man with a sharp jawline looking dominant and stylish'}],
- [/stare|staring|death stare|mean mug|mugging/,{emotion:['serious'],prompt:'a man staring intensely at the camera'}],
+ [/stare|staring|death stare|mean mug|mugging/,{emotion:['serious','annoyed'],prompt:'a man staring intensely at the camera'}],
+ [/jaw ?drop|mouth open|no way|can'?t believe|nah+ ?(bro|man)?|bruh|what the/,{emotion:['shocked','disbelief','confused'],prompt:'a shocked man with his jaw dropped in disbelief'}],
+ [/\bhuh\b|wait what|\bwhat\b|confus|lost|\?{2,}/,{emotion:['confused','disbelief','thinking'],prompt:'a confused puzzled man'}],
+ [/scared|scary|spooked|afraid|horror|jumpscare/,{emotion:['scared','shocked','nervous'],prompt:'a scared frightened man'}],
+ [/nervous|anxious|sweat|stress|worried/,{emotion:['nervous','awkward','scared'],prompt:'a nervous anxious man'}],
+ [/embarrass|shy|blush|facepalm/,{emotion:['embarrassed','awkward','laughing'],prompt:'an embarrassed man covering his face'}],
+ [/annoyed|irritat|fed up|eye ?roll|unbothered/,{emotion:['annoyed','disappointed','serious'],prompt:'an annoyed irritated man'}],
+ [/thinking|hmm+|ponder|plotting|scheming/,{emotion:['thinking','suspicious','focused'],prompt:'a thoughtful man thinking'}],
+ [/dying|hysteric|crying laugh|wheez|can'?t breathe|lmfao/,{emotion:['hysterical','laughing'],prompt:'a man laughing hysterically'}],
 ];
 const FIELD_OF={};
 const toks=s=>s.toLowerCase().replace(/[’']/g,"'").split(/[^a-z0-9'+-]+/).filter(Boolean);
@@ -63,13 +87,13 @@ async function load(){
   const [m,b]=await Promise.all([fetch('data.json').then(r=>r.json()),fetch('emb.bin').then(r=>r.arrayBuffer())]);
   META=m;N=m.count;DIM=m.dim;const all=new Int8Array(b);IMG=all.subarray(0,N*DIM);DSC=all.subarray(N*DIM,2*N*DIM);
   state.items=m.items.map((it,i)=>{it.i=i;const C=m.cats;
-    it.text=[it.desc,C.emotion[it.emotion],...(it.emo2||[]),C.setting[it.setting],C.who[it.who],it.celeb||'',...it.clothing.map(c=>C.clothing[c]),...(it.tags||[]),C.shot[it.shot]].join(' ').toLowerCase();
+    it.emos=it.emos||[it.emotion];it.text=[it.desc,...it.emos.map(e=>C.emotion[e]||e),C.setting[it.setting],C.who[it.who],it.celeb||'',...it.clothing.map(c=>C.clothing[c]),...(it.tags||[]),C.shot[it.shot]].join(' ').toLowerCase();
     it.words=new Set(toks(it.text));return it});
   buildFilters();renderChips();update();
 }
 function inFilters(it){const f=state.f;
   if(state.favOnly&&!favs.has(it.id))return false;
-  if(f.emotion.size&&!f.emotion.has(it.emotion))return false;
+  if(f.emotion.size&&!it.emos.some(e=>f.emotion.has(e)))return false;
   if(f.setting.size&&!f.setting.has(it.setting))return false;
   if(f.who.size&&!f.who.has(it.who))return false;
   if(f.shot.size&&!f.shot.has(it.shot))return false;
@@ -92,7 +116,7 @@ function kwScores(q){
   const mogQ=/\bmog|mogg|looksmax|sigma/.test(lq);
   for(const it of state.items){let s=0;
     if(mogQ&&it.words.has('mog'))s+=4;
-    if(want.emotion[it.emotion])s+=want.emotion[it.emotion];else for(const e of it.emo2||[])if(want.emotion[e]){s+=want.emotion[e]*.45;break}
+    if(want.emotion[it.emotion])s+=want.emotion[it.emotion];else{let b=0;for(const e of it.emos)if(want.emotion[e])b=Math.max(b,want.emotion[e]*.75);s+=b}
     if(want.setting[it.setting])s+=want.setting[it.setting];
     if(want.who[it.who])s+=want.who[it.who];
     if(want.shot[it.shot])s+=want.shot[it.shot];
@@ -159,7 +183,7 @@ function card(it){
   const d=document.createElement('div');d.className='card';d.tabIndex=0;
   d.innerHTML=`<img loading="lazy" decoding="async" alt="">${''}<div class="ov"><span class="tg"></span><span class="qa"><button class="cp" title="Copy">📋</button><button class="dl" title="Download">⬇</button><button class="fav" title="Save">♥</button></span></div>`;
   const img=d.querySelector('img');img.onload=()=>img.classList.add('ld');img.src=it.thumb;img.alt=it.desc;
-  d.querySelector('.tg').textContent=META.cats.emotion[it.emotion]+' · '+META.cats.setting[it.setting];
+  d.querySelector('.tg').textContent=it.emos.slice(0,2).map(e=>META.cats.emotion[e]).join(' · ');
   d.addEventListener('click',e=>{const b=e.target.closest('button');
     if(b?.classList.contains('fav')){e.stopPropagation();toggleFav(it);return}
     if(b?.classList.contains('dl')){e.stopPropagation();download(it);return}
@@ -180,7 +204,7 @@ addEventListener('resize',()=>{clearTimeout(layout.t);layout.t=setTimeout(layout
 
 // ---------- filters UI ----------
 const GROUPS=[['emotion','Emotion'],['setting','Setting'],['who',"Who's in it"],['clothing','Wearing / style'],['shot','Shot type']];
-function counts(g){const c={};for(const it of state.items){const vals=g==='clothing'?it.clothing:[it[g]];for(const v of vals)c[v]=(c[v]||0)+1}return c}
+function counts(g){const c={};for(const it of state.items){const vals=g==='clothing'?it.clothing:g==='emotion'?it.emos:[it[g]];for(const v of vals)c[v]=(c[v]||0)+1}return c}
 function buildFilters(){
   const box=$('#groups');box.innerHTML='';
   for(const [g,label] of GROUPS){const c=counts(g);const el=document.createElement('div');el.className='grp';el.innerHTML=`<h4>${label}</h4><div class="opts"></div>`;
@@ -193,7 +217,7 @@ function activeCount(){return Object.values(state.f).reduce((a,s)=>a+s.size,0)}
 function toggleF(g,k){const s=state.f[g];s.has(k)?s.delete(k):s.add(k);syncF();update()}
 function syncF(){document.querySelectorAll('.opt').forEach(b=>b.classList.toggle('on',state.f[b.dataset.g].has(b.dataset.k)));
   const n=activeCount();$('#fcount').textContent=n||'';renderChips()}
-const QUICK=['smiling','laughing','smug','shocked','hype','confused','calm','serious'];
+const QUICK=['shocked','confused','disbelief','laughing','smug','disgusted','awkward','hype','smiling','suspicious'];
 function renderChips(){
   const c=$('#chips');c.innerHTML='';
   for(const [g,s] of Object.entries(state.f))for(const k of s)if(!(g==='emotion'&&QUICK.includes(k))){const b=document.createElement('button');b.className='chip x';b.textContent=META.cats[g][k]+'  ✕';b.onclick=()=>toggleF(g,k);c.appendChild(b)}
@@ -231,7 +255,7 @@ const lb=$('#lb'),lbimg=$('#lbimg');
 function openLB(i){if(i<0)return;state.lbIndex=i;const it=state.order[i];lb.hidden=false;document.body.style.overflow='hidden';
   lbimg.src=it.thumb;const full=new Image();full.onload=()=>{if(state.order[state.lbIndex]===it)lbimg.src=it.full};full.src=it.full;
   $('#lbdesc').textContent=it.desc;const C=META.cats;
-  const tg=[['emotion',it.emotion],['setting',it.setting],['who',it.who],['shot',it.shot],...it.clothing.map(c=>['clothing',c])];
+  const tg=[...it.emos.map(e=>['emotion',e]),['setting',it.setting],['who',it.who],['shot',it.shot],...it.clothing.map(c=>['clothing',c])];
   $('#lbtags').innerHTML='';tg.forEach(([g,k])=>{const s=document.createElement('span');s.textContent=C[g][k];s.title='Filter by '+C[g][k];s.onclick=()=>{closeLB();if(!state.f[g].has(k))toggleF(g,k)};$('#lbtags').appendChild(s)});
   if(it.celeb){const s=document.createElement('span');s.textContent=it.celeb;$('#lbtags').appendChild(s)}
   $('#lbdl').href=it.full;$('#lbdl').setAttribute('download',fname(it));
